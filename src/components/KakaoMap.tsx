@@ -21,12 +21,6 @@ const KakaoMap: React.FC<KakaoMapProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!window.kakao || !window.kakao.maps || !mapRef.current) {
-      console.error("❌ Kakao Maps SDK 로드 실패");
-      return;
-    }
-
-    // SDK 완전히 로드된 후 실행
     window.kakao.maps.load(() => {
       const container = mapRef.current;
       const options = {

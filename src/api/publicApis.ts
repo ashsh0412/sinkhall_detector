@@ -18,7 +18,7 @@ export interface SinkholeRiskItem {
 
 export async function fetchSinkholeRisk(
   pageNo = 1,
-  numOfRows = 10
+  numOfRows = 1000
 ): Promise<SinkholeRiskItem[]> {
   const url = `${API_BASE_URL}/DSSP-IF-00752?serviceKey=${SINKHOLE_RISK_KEY}&pageNo=${pageNo}&numOfRows=${numOfRows}&returnType=json`;
   return fetchData<SinkholeRiskItem>(url);
@@ -36,7 +36,7 @@ export interface SinkholeAccidentItem {
 
 export async function fetchSinkholeAccident(
   pageNo = 1,
-  numOfRows = 10
+  numOfRows = 1000
 ): Promise<SinkholeAccidentItem[]> {
   const url = `${API_BASE_URL}/DSSP-IF-00754?serviceKey=${SINKHOLE_ACCIDENT_KEY}&pageNo=${pageNo}&numOfRows=${numOfRows}&returnType=json`;
   return fetchData<SinkholeAccidentItem>(url);
@@ -67,7 +67,7 @@ export interface SinkholeInfoItem {
 
 export async function fetchSinkholeInfo(
   pageNo = 1,
-  numOfRows = 10
+  numOfRows = 1000
 ): Promise<SinkholeInfoItem[]> {
   const url = `${API_BASE_URL}/DSSP-IF-20608?serviceKey=${SINKHOLE_INFO_KEY}&pageNo=${pageNo}&numOfRows=${numOfRows}&returnType=json`;
   return fetchData<SinkholeInfoItem>(url);
@@ -93,7 +93,7 @@ export interface FacilitySafetyItem {
 
 export async function fetchFacilitySafety(
   pageNo = 1,
-  numOfRows = 10
+  numOfRows = 1000
 ): Promise<FacilitySafetyItem[]> {
   const url = `${API_BASE_URL}/DSSP-IF-00762?serviceKey=${FACILITY_SAFETY_KEY}&pageNo=${pageNo}&numOfRows=${numOfRows}&returnType=json`;
   return fetchData<FacilitySafetyItem>(url);

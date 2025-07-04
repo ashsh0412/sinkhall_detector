@@ -16,11 +16,6 @@ const MapPage: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!window.kakao || !window.kakao.maps || !mapRef.current) {
-      console.error("❌ Kakao Maps SDK 로드 실패");
-      return;
-    }
-
     window.kakao.maps.load(async () => {
       const map = new window.kakao.maps.Map(mapRef.current, {
         center: new window.kakao.maps.LatLng(37.5665, 126.978), // 서울시청

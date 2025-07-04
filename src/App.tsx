@@ -1,20 +1,46 @@
-// src/App.tsx
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useLocation,
+} from "react-router-dom";
+import { Layout, Menu } from "antd";
 import Home from "./pages/HomePage";
 import MapPage from "./pages/MapPage";
 
+const { Header, Content } = Layout;
+
 const App = () => {
+  const location = useLocation();
+
   return (
-    <Router>
-      <nav style={{ marginBottom: "20px" }}>
-        <Link to="/">홈</Link> | <Link to="/map">지도</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/map" element={<MapPage />} />
-      </Routes>
-    </Router>
+    <Layout style={{ minHeight: "100vh" }}>
+      <Header>
+        <Menu
+          theme="dark"
+          mode="horizontal"
+          selectedKeys={[location.pathname === "/map" ? "map" : "home"]}
+          items={[
+            { key: "home", label: <Link to="/">홈</Link> },
+            { key: "map", label: <Link to="/map">지도</Link> },
+          ]}
+        />
+      </Header>
+      <Content>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/map" element={<MapPage />} />
+        </Routes>
+      </Content>
+    </Layout>
   );
 };
 
-export default App;
+const AppWrapper = () => (
+  <Router>
+    <App />
+  </Router>
+);
+
+export default AppWrapper;
