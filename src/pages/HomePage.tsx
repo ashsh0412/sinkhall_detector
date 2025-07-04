@@ -23,11 +23,6 @@ const Home: React.FC = () => {
       const info = await fetchSinkholeInfo();
       const facility = await fetchFacilitySafety();
 
-      console.log("✅ 지반침하 위험도 평가 데이터:", risk);
-      console.log("✅ 지반침하 사고 목록 데이터:", accident);
-      console.log("✅ 지반침하 상세정보 데이터:", info);
-      console.log("✅ 상하수도 시설물 안전 관리 데이터:", facility);
-
       setRiskData(risk);
       setAccidentData(accident);
       setInfoData(info);
