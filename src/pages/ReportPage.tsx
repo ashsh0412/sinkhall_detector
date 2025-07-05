@@ -13,7 +13,6 @@ import {
   fetchSinkholeInfo,
   fetchFacilitySafety,
   fetchSinkholeAccident,
-  fetchSinkholeRisk,
 } from "../api/publicApis";
 
 const { Title, Paragraph } = Typography;
@@ -28,6 +27,7 @@ interface RegionRisk {
   riskTrend: string;
   riskReason: string;
   totalRepairCost: number;
+  accidentYears: number[]; // 추가
 }
 
 const ReportPage: React.FC = () => {
@@ -41,18 +41,19 @@ const ReportPage: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [sinkholeInfo, facilityData] = await Promise.all([
+        const [sinkholeInfo, facilityData, accidentData] = await Promise.all([
           fetchSinkholeInfo(1, 1000),
           fetchFacilitySafety(1, 1000),
           fetchSinkholeAccident(1, 1000),
-          fetchSinkholeRisk(1, 1000),
         ]);
 
         const nowYear = new Date().getFullYear();
         const regionMap: Record<string, RegionRisk> = {};
 
-        sinkholeInfo.forEach((item) => {
-          const region = `${item.CTPV_NM} ${item.SGG_NM}`;
+        // 사고 데이터 기반으로 지역 생성
+        // 사고 데이터 기반으로 지역 생성
+        accidentData.forEach((acc) => {
+          const region = `${acc.CTPV} ${acc.SGG}`;
           if (!regionMap[region]) {
             regionMap[region] = {
               region,
@@ -62,21 +63,43 @@ const ReportPage: React.FC = () => {
               riskTrend: "불확실",
               riskReason: "",
               totalRepairCost: 0,
+              accidentYears: [], // 누락된 부분 추가
             };
           }
-
           regionMap[region].totalAccidents++;
-
-          const year = parseInt(item.OCRN_YMD?.slice(0, 4) || "0", 10);
-          if (nowYear - year <= 3) {
+          const year = parseInt(acc.OCRN_YMD?.slice(0, 4) || "0", 10);
+          regionMap[region].accidentYears.push(year); // 사고 발생 연도 저장
+          if (new Date().getFullYear() - year <= 3) {
             regionMap[region].recentAccidents++;
+          }
+        });
+
+        // 복구 비용 추가 (상세 정보 기준)
+        sinkholeInfo.forEach((info) => {
+          const region = `${info.CTPV_NM} ${info.SGG_NM}`;
+          if (!regionMap[region]) {
+            regionMap[region] = {
+              region,
+              totalAccidents: 0,
+              recentAccidents: 0,
+              facilityStatus: "미확인",
+              riskTrend: "불확실",
+              riskReason: "",
+              totalRepairCost: 0,
+              accidentYears: [], // 추가
+            };
+          }
+          const year = parseInt(info.OCRN_YMD?.slice(0, 4) || "0", 10);
+          regionMap[region].accidentYears.push(year); // 발생년도 추가
+          if (nowYear - year <= 3) {
             regionMap[region].totalRepairCost += parseInt(
-              item.RSTR_CST || "0",
+              info.RSTR_CST || "0",
               10
             );
           }
         });
 
+        // 시설물 상태 추가
         facilityData.forEach((fac) => {
           const key = fac.PSTN.split(" ")[0];
           Object.keys(regionMap).forEach((region) => {
@@ -87,27 +110,48 @@ const ReportPage: React.FC = () => {
         });
 
         Object.values(regionMap).forEach((region) => {
-          const reasons = [];
-          if (region.recentAccidents >= 3) reasons.push("최근 사고 다발 지역");
-          if (region.facilityStatus.includes("C"))
-            reasons.push("시설물 노후화 심각");
-          if (region.totalAccidents >= 5)
-            reasons.push("장기적으로 사고 누적됨");
+          let riskScore = 0;
+          const reasons: string[] = [];
 
-          region.riskReason = reasons.length
-            ? reasons.join(", ")
-            : "특이 사항 없음";
-
-          if (
-            region.recentAccidents >= 6 ||
-            region.facilityStatus.includes("C")
-          ) {
-            region.riskTrend = "위험 증가";
-          } else if (region.recentAccidents === 0) {
-            region.riskTrend = "안정적";
-          } else {
-            region.riskTrend = "보통";
+          if (region.recentAccidents > 0) {
+            if (region.recentAccidents >= 6) {
+              riskScore += 10;
+              reasons.push("최근 3년간 사고 다발 지역");
+            } else if (region.recentAccidents >= 3) {
+              riskScore += 7;
+              reasons.push("최근 3년간 사고 빈번");
+            } else {
+              riskScore += 4;
+              reasons.push("최근 사고 발생");
+            }
           }
+
+          if (region.totalAccidents >= 20) {
+            riskScore += 10;
+            reasons.push("장기적으로 사고 누적됨");
+          } else if (region.totalAccidents >= 13) {
+            riskScore += 5;
+            reasons.push("과거 사고 다발");
+          }
+
+          if (region.facilityStatus.includes("D")) {
+            riskScore += 10;
+            reasons.push("시설물 심각한 노후화");
+          } else if (region.facilityStatus.includes("C")) {
+            riskScore += 5;
+            reasons.push("시설물 노후화");
+          }
+
+          if (riskScore >= 13) {
+            region.riskTrend = "위험";
+          } else if (riskScore >= 4) {
+            region.riskTrend = "보통";
+          } else {
+            region.riskTrend = "안정적";
+          }
+
+          region.riskReason =
+            reasons.length > 0 ? reasons.join(", ") : "특이 사항 없음";
         });
 
         const sortedData = Object.values(regionMap).sort(
@@ -142,10 +186,9 @@ const ReportPage: React.FC = () => {
     <Layout>
       <Content style={{ padding: "24px" }}>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
-          <Title level={2}>📊 지역별 지반 위험 분석 보고서</Title>
+          <Title level={2}>📊 전국 지반 위험 분석 보고서</Title>
           <Paragraph>
-            최근 사고 발생 건수, 시설물 상태, 위험도 추세, 복구 비용 등을 종합한
-            보고서입니다.
+            전국 모든 사고 이력과 시설물 상태를 기반으로 분석한 보고서입니다.
           </Paragraph>
 
           <Search
