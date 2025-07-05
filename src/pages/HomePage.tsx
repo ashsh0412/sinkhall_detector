@@ -126,7 +126,6 @@ const HomePage: React.FC = () => {
       sorter: (a, b) => a.facilityStatus.localeCompare(b.facilityStatus),
       showSorterTooltip: { title: "시설물 상태 등급 기준으로 정렬" },
     },
-    { title: "위험 수준", dataIndex: "riskLevel", key: "riskLevel" },
   ];
 
   return (
